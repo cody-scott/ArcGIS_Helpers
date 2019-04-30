@@ -4,13 +4,19 @@ Packaging for helper functions for arcgis
 
 Talk to cody about installing/using via pip
 
-pip install .
+    pip install .
+
+When testing install with:
+
+    pip install -e .
 
 for wheel
-python setup.py bdist_wheel --universal
+
+    python setup.py bdist_wheel --universal
 
 for exe
-python setup.py bdist_wininst
+
+    python setup.py bdist_wininst
 
 
 type following in arcgis to import

@@ -8,7 +8,10 @@ import contextlib
 import pyperclip
 
 from arcgis_helpers.__logger import _logger
+import sys
 
+if not hasattr(sys, 'argv'):
+    sys.argv  = ['']
 
 def feature_to_tsv_clipboard(feature, field_name=None, show_headers=True,
                              where_clause=None):
@@ -64,7 +67,7 @@ def feature_to_tsv(feature, field_name=None, show_headers=True,
     _logger.info("building data rows")
     output_values_2 = []
     for item in output_values_1:
-        output_values_2.append("\t".join(str(x) for x in item))
+        output_values_2.append("\t".join(__convert_value(x) for x in item))
 
     _logger.info("building header rows")
     if "*" in field_name:
@@ -78,6 +81,18 @@ def feature_to_tsv(feature, field_name=None, show_headers=True,
     _logger.info("adding data to output value")
     output_text += "\n".join(x for x in output_values_2)
     return output_text
+
+
+def __convert_value(value):
+    out_value = None
+    try:
+        out_value = str(value)
+    except UnicodeEncodeError as UE:
+        print("Error with {}".format(value.encode('utf-8')))
+        # out_value = str(value.encode('utf8'))
+        out_value = "ERROR VALUE"
+
+    return out_value
 
 
 def save_text_to_file(text, output_path, file_name="OutputFile",
@@ -113,6 +128,19 @@ def save_text_to_file(text, output_path, file_name="OutputFile",
     return
 
 
+def _extent_to_polygon(extent):
+    extents = [
+        [extent.XMin, extent.YMin],
+        [extent.XMax, extent.YMin],
+        [extent.XMax, extent.YMax],
+        [extent.XMin, extent.YMax]
+    ]
+    extent_poly = arcpy.Polygon(
+        arcpy.Array([arcpy.Point(*coords) for coords in extents])
+    )
+    return extent_poly
+
+
 @contextlib.contextmanager
 def map_document_cm(mxd_path):
     """
@@ -130,5 +158,50 @@ def map_document_cm(mxd_path):
     del _mxd
 
 
+def get_unique_values(feature, field):
+    def search_unique(feat):
+        with arcpy.da.SearchCursor(feat, field) as sc:
+            return [row[0] for row in sc]
+
+    if not type(field) in [str, unicode]:
+        error_msg = "Field should be a string or unicode, not {}".format(
+            type(field))
+        _logger.error(error_msg)
+        print(error_msg)
+        return
+
+    results = []
+    if type(feature) is list:
+        for item in feature:
+            results += search_unique(item)
+    else:
+        results = search_unique(feature)
+
+    return list(set(results))
+
+
 def _set_logger_level(level):
     _logger.setLevel(level)
+
+
+if __name__ == '__main__':
+
+    # a = r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Polygon'
+    # a_r = get_unique_values(a, ["HARDCOPYLOCATION"])
+    #
+    # a_r = get_unique_values(a, "HARDCOPYLOCATION")
+    #
+    #
+    # a = [r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Polygon', r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Point']
+    # a_r = get_unique_values(a, "HARDCOPYLOCATION")
+
+    x = feature_to_tsv_clipboard('Database Connections\\Production.sde\\GIS.RMW.RegionalProperties',
+                                            # [
+                                            #     # "PropertyName",
+                                            #     # "FullAddress",
+                                            #     # "Settlement",
+                                            #     # "Municipality",
+                                            #     "ParentSite",
+                                            # ]
+    )
+    pass
