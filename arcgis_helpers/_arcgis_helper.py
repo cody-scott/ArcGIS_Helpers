@@ -260,27 +260,4 @@ def _set_logger_level(level):
 
 
 if __name__ == '__main__':
-
-    tmp_ft = arcpy.MakeFeatureLayer_management(r'',
-                                      'ft')
-    select_by_regex()
-
-    # a = r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Polygon'
-    # a_r = get_unique_values(a, ["HARDCOPYLOCATION"])
-    #
-    # a_r = get_unique_values(a, "HARDCOPYLOCATION")
-    #
-    #
-    # a = [r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Polygon', r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Point']
-    # a_r = get_unique_values(a, "HARDCOPYLOCATION")
-
-    # x = feature_to_tsv_clipboard('Database Connections\\Production.sde\\GIS.RMW.RegionalProperties',
-    #                                         # [
-    #                                         #     # "PropertyName",
-    #                                         #     # "FullAddress",
-    #                                         #     # "Settlement",
-    #                                         #     # "Municipality",
-    #                                         #     "ParentSite",
-    #                                         # ]
-    # )
     pass
