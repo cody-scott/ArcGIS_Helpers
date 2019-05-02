@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='arcgis_helpers',
-      version='0.9.3',
+      version='0.9.4',
       description='Helpers for ArcGIS.',
       url='',
       author='Cody',

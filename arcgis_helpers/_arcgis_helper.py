@@ -4,6 +4,7 @@ import arcpy
 import os
 import logging
 import contextlib
+import re
 
 import pyperclip
 
@@ -180,11 +181,89 @@ def get_unique_values(feature, field):
     return list(set(results))
 
 
+def select_by_regex(feature, fields, expression,
+                    selection_type="NEW_SELECTION",
+                    pre_clear_selection=True
+                    ):
+    """
+    Allow selection of featurse based on a regex command.
+    Iterates using search cursor and attempts to find pattern specified
+    Since it uses search cursors it will honour selection sets applied, and will only search that selection (if there is one)
+    :param feature: feature to apply selection to
+    :type feature: FeatureLayer
+    :param fields: single field or list of fields
+    :type fields: str or list
+    :param expression: expression to be applied
+    :type expression: str
+    :param selection_type: selection to be applied to feature
+    :type selection_type:
+    :param pre_clear_selection: Clear any current selection set before applying search
+    :return: bool
+    :rtype: list
+    """
+
+    if pre_clear_selection:
+        arcpy.SelectLayerByAttribute_management(feature, "CLEAR_SELECTION")
+
+    oid_list = _get_OID_match(feature, fields, expression)
+    sql = ""
+    if len(oid_list) > 0:
+        describe_feature = arcpy.Describe(feature)
+
+        sql = "\"{}\" IN ({})".format(
+            describe_feature.OIDFieldName,
+            ",".join(["{}".format(oid) for oid in oid_list])
+        )
+
+        arcpy.SelectLayerByAttribute_management(
+            feature,
+            selection_type,
+            sql
+        )
+
+    else:
+        print("No features match pattern {}".format(expression))
+
+    return oid_list
+
+
+def _get_OID_match(feature, fields, expression):
+    if type(fields) is list:
+        fields = ["OID@"] + fields
+    else:
+        fields = ["OID@", "{}".format(fields)]
+
+    matcher = re.compile(expression)
+
+    oid_list = []
+    with arcpy.da.SearchCursor(feature, fields) as sc:
+        for row in sc:
+            if _check_match(matcher, row):
+                oid_list.append(row[0])
+
+    return oid_list
+
+
+def _check_match(matcher, row):
+    for i in range(1, len(row)):
+        field_value = row[i]
+        if field_value is None:
+            continue
+
+        if matcher.match("{}".format(field_value)) is not None:
+            return True
+    return False
+
+
 def _set_logger_level(level):
     _logger.setLevel(level)
 
 
 if __name__ == '__main__':
+
+    tmp_ft = arcpy.MakeFeatureLayer_management(r'',
+                                      'ft')
+    select_by_regex()
 
     # a = r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Polygon'
     # a_r = get_unique_values(a, ["HARDCOPYLOCATION"])
@@ -195,13 +274,13 @@ if __name__ == '__main__':
     # a = [r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Polygon', r'I:\DocsDraw\DocsDrawFCs.gdb\DocsDraw_Point']
     # a_r = get_unique_values(a, "HARDCOPYLOCATION")
 
-    x = feature_to_tsv_clipboard('Database Connections\\Production.sde\\GIS.RMW.RegionalProperties',
-                                            # [
-                                            #     # "PropertyName",
-                                            #     # "FullAddress",
-                                            #     # "Settlement",
-                                            #     # "Municipality",
-                                            #     "ParentSite",
-                                            # ]
-    )
+    # x = feature_to_tsv_clipboard('Database Connections\\Production.sde\\GIS.RMW.RegionalProperties',
+    #                                         # [
+    #                                         #     # "PropertyName",
+    #                                         #     # "FullAddress",
+    #                                         #     # "Settlement",
+    #                                         #     # "Municipality",
+    #                                         #     "ParentSite",
+    #                                         # ]
+    # )
     pass
