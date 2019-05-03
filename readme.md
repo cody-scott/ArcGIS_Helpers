@@ -2,7 +2,7 @@
 
 Packaging for helper functions for arcgis
 
-Talk to cody about installing/using via pip
+install via pip
 
     pip install .
 
